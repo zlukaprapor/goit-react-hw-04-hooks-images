@@ -91,15 +91,3 @@ export default function App() {
     </div>
   );
 }
-
-// class OldApp extends Component {
-//   state = {
-//     imgName: '',
-//     page: 1,
-//     images: [],
-//     error: null,
-//     isLoading: false,
-//     // shouldScroll: false,
-//     currentImages: '',
-//     openModal: false,
-//   };
