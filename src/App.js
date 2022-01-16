@@ -1,119 +1,105 @@
-import { Component } from 'react';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import styles from './App.module.css';
-import imgApi from './services';
-import Searchbar from './component/Searchbar';
-import ImageGallery from './component/ImageGallery';
-import Load from './component/Loader';
-import Button from './component/Button';
-import Modal from './component/Modal';
+import { useState, useEffect } from "react";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import styles from "./App.module.css";
+import imgApi from "./services";
+import Searchbar from "./component/Searchbar";
+import ImageGallery from "./component/ImageGallery";
+import Load from "./component/Loader";
+import Button from "./component/Button";
+import Modal from "./component/Modal";
 
-export default class App extends Component {
-  state = {
-    imgName: '',
-    page: 1,
-    images: [],
-    error: null,
-    isLoading: false,
-    shouldScroll: false,
-    currentImages: '',
-    openModal: false,
-  };
+export default function App() {
+  const [imgName, setImgName] = useState("");
+  const [page, setPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentImages, setCurrentImages] = useState("");
+  const [openModal, setOpenModal] = useState(false);
 
-  componentDidUpdate(prevProps, prevState) {
-    const prevName = prevState.imgName;
-    const nextName = this.state.imgName;
+  useEffect(() => {
+    if (!imgName) return;
 
-    if (prevName !== nextName) {
-      this.fetchImages();
-    }
-    if (this.state.images.length > 10) {
-      window.scrollTo({
-        top: document.documentElement.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-  }
+    const fetchImages = async () => {
+      loaderToggle();
 
-  handleButton = () => {
-    this.fetchImages();
-    if (this.state.page > 1) {
-      this.setState({ shouldScroll: true });
-    }
-  };
-
-  hendleFormSubmit = (imgName) => {
-    this.setState({
-      imgName,
-      page: 1,
-      images: [],
-    });
-  };
-
-  OnLoadMore = () => {
-    this.setState((prev) => ({
-      page: prev.page + 1,
-    }));
-    this.fetchImages();
-  };
-
-  loaderToggle = () => {
-    this.setState((prev) => ({
-      isLoading: !prev.isLoading,
-    }));
-  };
-
-  onImgClick = (e) => {
-    if (e.target.nodeName !== 'IMG') {
-      return;
-    }
-    this.setState({
-      currentImages: e.target.dataset.img,
-    });
-    this.toggleModal();
-  };
-
-  toggleModal = () => {
-    this.setState((prev) => ({
-      openModal: !prev.openModal,
-    }));
-  };
-
-  fetchImages = () => {
-    this.loaderToggle();
-    return setTimeout(() => {
-      const { imgName, page } = this.state;
-      imgApi
+      return imgApi
         .fetchImg(imgName, page)
         .then((images) =>
-          this.setState((prevState) => ({
-            images: [...prevState.images, ...images.hits],
-          }))
+          setImages((prevState) => [...prevState, ...images.hits])
         )
-        .catch((error) => this.setState({ error: true }))
-        .finally(() => this.loaderToggle());
-    }, 1000);
+        .finally(() => loaderToggle());
+    };
+    fetchImages();
+  }, [imgName, page]);
+
+  const scrollPage = () => {
+    setTimeout(() => {
+      window.scrollBy({
+        top: document.documentElement.clientHeight - 160,
+        behavior: "smooth",
+      });
+    }, 800);
   };
 
-  render() {
-    const { images, isLoading, openModal, currentImages } = this.state;
-    return (
-      <div className={styles.App}>
-        <Searchbar onSubmit={this.hendleFormSubmit} />
-        <ImageGallery images={images} onImgClick={this.onImgClick} />
-        {isLoading && <Load />}
-        {images.length > 0 && !isLoading && (
-          <Button onBtnClick={this.OnLoadMore} text={'Download more'} />
-        )}
-        <ToastContainer autoClose={3000} />
+  const hendleFormSubmit = (imgName) => {
+    setImgName(imgName);
+    setPage(1);
+    setImages([]);
+  };
 
-        {openModal && (
-          <Modal onCloseModal={this.toggleModal}>
-            <img src={currentImages} alt="Dont Worry Be Happy" />
-          </Modal>
-        )}
-      </div>
-    );
-  }
+  const OnLoadMore = () => {
+    setPage((prev) => prev + 1);
+    if (imgName) {
+      loaderToggle();
+      scrollPage();
+      loaderToggle();
+    }
+  };
+
+  const loaderToggle = () => {
+    setIsLoading((prev) => !prev);
+  };
+
+  const onImgClick = (e) => {
+    if (e.target.nodeName !== "IMG") {
+      return;
+    }
+    setCurrentImages(e.target.dataset.img);
+    toggleModal();
+  };
+
+  const toggleModal = () => {
+    setOpenModal((prev) => !prev);
+  };
+
+  return (
+    <div className={styles.App}>
+      <Searchbar onSubmit={hendleFormSubmit} />
+      <ImageGallery images={images} onImgClick={onImgClick} />
+      {isLoading && <Load />}
+      {images.length > 0 && !isLoading && (
+        <Button onBtnClick={OnLoadMore} text={"Download more"} />
+      )}
+      <ToastContainer autoClose={3000} />
+
+      {openModal && (
+        <Modal onCloseModal={toggleModal}>
+          <img src={currentImages} alt="Dont Worry Be Happy" />
+        </Modal>
+      )}
+    </div>
+  );
 }
+
+// class OldApp extends Component {
+//   state = {
+//     imgName: '',
+//     page: 1,
+//     images: [],
+//     error: null,
+//     isLoading: false,
+//     // shouldScroll: false,
+//     currentImages: '',
+//     openModal: false,
+//   };
